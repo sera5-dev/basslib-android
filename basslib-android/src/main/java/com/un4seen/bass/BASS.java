@@ -1,14 +1,14 @@
 /*
 	BASS 2.4 Java class
-	Copyright (c) 1999-2014 Un4seen Developments Ltd.
+	Copyright (c) 1999-2018 Un4seen Developments Ltd.
 
 	See the BASS.CHM file for more detailed documentation
 */
+
 package com.un4seen.bass;
 
-import android.content.res.AssetManager;
-
 import java.nio.ByteBuffer;
+import android.content.res.AssetManager;
 
 public class BASS
 {
@@ -26,6 +26,7 @@ public class BASS
 	public static final int BASS_ERROR_POSITION = 7;	// invalid position
 	public static final int BASS_ERROR_INIT = 8;	// BASS_Init has not been successfully called
 	public static final int BASS_ERROR_START = 9;	// BASS_Start has not been successfully called
+	public static final int BASS_ERROR_SSL = 10;	// SSL/HTTPS support isn't available
 	public static final int BASS_ERROR_ALREADY = 14;	// already initialized/paused/whatever
 	public static final int BASS_ERROR_NOCHAN = 18;	// can't get a free channel
 	public static final int BASS_ERROR_ILLTYPE = 19;	// an illegal type was specified
@@ -41,7 +42,7 @@ public class BASS
 	public static final int BASS_ERROR_NONET = 32;	// no internet connection could be opened
 	public static final int BASS_ERROR_CREATE = 33;	// couldn't create the file
 	public static final int BASS_ERROR_NOFX = 34;	// effects are not available
-	public static final int BASS_ERROR_NOTAVAIL = 37;	// requested data is not available
+	public static final int BASS_ERROR_NOTAVAIL = 37;	// requested data/action is not available
 	public static final int BASS_ERROR_DECODE = 38;	// the channel is a "decoding channel"
 	public static final int BASS_ERROR_DX = 39;	// a sufficient DirectX version is not installed
 	public static final int BASS_ERROR_TIMEOUT = 40;	// connection timedout
@@ -53,7 +54,7 @@ public class BASS
 	public static final int BASS_ERROR_BUSY = 46;	// the device is busy
 	public static final int BASS_ERROR_UNKNOWN = -1;	// some other mystery problem
 
-	public static final int BASS_ERROR_JAVA_CLASS = 2000;	// object class problem
+	public static final int BASS_ERROR_JAVA_CLASS = 500;	// object class problem
 
 	// BASS_SetConfig options
 	public static final int BASS_CONFIG_BUFFER = 0;
@@ -85,19 +86,27 @@ public class BASS
 	public static final int BASS_CONFIG_OGG_PRESCAN = 47;
 	public static final int BASS_CONFIG_DEV_NONSTOP = 50;
 	public static final int BASS_CONFIG_VERIFY_NET = 52;
+	public static final int BASS_CONFIG_DEV_PERIOD = 53;
+	public static final int BASS_CONFIG_FLOAT = 54;
+	public static final int BASS_CONFIG_NET_SEEK = 56;
+	public static final int BASS_CONFIG_AM_DISABLE = 58;
+	public static final int BASS_CONFIG_NET_PLAYLIST_DEPTH = 59;
+	public static final int BASS_CONFIG_NET_PREBUF_WAIT	= 60;
 
 	// BASS_SetConfigPtr options
 	public static final int BASS_CONFIG_NET_AGENT = 16;
 	public static final int BASS_CONFIG_NET_PROXY = 17;
 
 	// BASS_Init flags
-	public static final int BASS_DEVICE_8BITS = 1;	// 8 bit resolution, else 16 bit
-	public static final int BASS_DEVICE_MONO = 2;	// mono, else stereo
+	public static final int BASS_DEVICE_8BITS = 1;	// 8 bit
+	public static final int BASS_DEVICE_MONO = 2;	// mono
 	public static final int BASS_DEVICE_3D = 4;	// enable 3D functionality
+	public static final int BASS_DEVICE_16BITS = 8;		// limit output to 16 bit
 	public static final int BASS_DEVICE_LATENCY = 0x100;	// calculate device latency (BASS_INFO struct)
 	public static final int BASS_DEVICE_SPEAKERS = 0x800; // force enabling of speaker assignment
 	public static final int BASS_DEVICE_NOSPEAKER = 0x1000; // ignore speaker arrangement
 	public static final int BASS_DEVICE_FREQ = 0x4000; // set device sample rate
+	public static final int BASS_DEVICE_AUDIOTRACK = 0x20000; // use AudioTrack output
 
 	// Device info structure
 	public static class BASS_DEVICEINFO {
@@ -192,6 +201,7 @@ public class BASS
 	public static final int BASS_MUSIC_RAMPS = 0x400;	// sensitive ramping
 	public static final int BASS_MUSIC_SURROUND = 0x800;	// surround sound
 	public static final int BASS_MUSIC_SURROUND2 = 0x1000;	// surround sound (mode 2)
+	public static final int BASS_MUSIC_FT2PAN = 0x2000; // apply FastTracker 2 panning to XM files
 	public static final int BASS_MUSIC_FT2MOD = 0x2000;	// play .MOD as FastTracker 2 does
 	public static final int BASS_MUSIC_PT1MOD = 0x4000;	// play .MOD as ProTracker 1 does
 	public static final int BASS_MUSIC_NONINTER = 0x10000;	// non-interpolated sample mixing
@@ -234,6 +244,8 @@ public class BASS
 		public String filename; // filename
 	}
 
+	public static final int BASS_ORIGRES_FLOAT = 0x10000;
+
 	// BASS_CHANNELINFO types
 	public static final int BASS_CTYPE_SAMPLE = 1;
 	public static final int BASS_CTYPE_RECORD = 2;
@@ -245,6 +257,9 @@ public class BASS
 	public static final int BASS_CTYPE_STREAM_AIFF = 0x10006;
 	public static final int BASS_CTYPE_STREAM_CA = 0x10007;
 	public static final int BASS_CTYPE_STREAM_MF = 0x10008;
+	public static final int BASS_CTYPE_STREAM_AM = 0x10009;
+	public static final int BASS_CTYPE_STREAM_DUMMY = 0x18000;
+	public static final int BASS_CTYPE_STREAM_DEVICE = 0x18001;
 	public static final int BASS_CTYPE_STREAM_WAV = 0x40000; // WAVE flag, LOWORD=codec
 	public static final int BASS_CTYPE_STREAM_WAV_PCM = 0x50001;
 	public static final int BASS_CTYPE_STREAM_WAV_FLOAT = 0x50003;
@@ -305,6 +320,7 @@ public class BASS
 	// special STREAMPROCs
 	public static final int STREAMPROC_DUMMY = 0;		// "dummy" stream
 	public static final int STREAMPROC_PUSH = -1;		// push stream
+	public static final int STREAMPROC_DEVICE = -2;		// device mix stream
 
 	// BASS_StreamCreateFileUser file systems
 	public static final int STREAMFILE_NOBUFFER = 0;
@@ -334,6 +350,7 @@ public class BASS
 	public static final int BASS_FILEPOS_SOCKET = 6;
 	public static final int BASS_FILEPOS_ASYNCBUF = 7;
 	public static final int BASS_FILEPOS_SIZE = 8;
+	public static final int BASS_FILEPOS_BUFFERING = 9;
 
 	public interface DOWNLOADPROC
 	{
@@ -357,8 +374,8 @@ public class BASS
 	public static final int BASS_SYNC_MUSICINST = 1;
 	public static final int BASS_SYNC_MUSICFX = 3;
 	public static final int BASS_SYNC_OGG_CHANGE = 12;
-	public static final int BASS_SYNC_MIXTIME = 0x40000000;	// FLAG: sync at mixtime, else at playtime
-	public static final int BASS_SYNC_ONETIME = 0x80000000;	// FLAG: sync only once, else continuously
+	public static final int BASS_SYNC_MIXTIME = 0x40000000;	// flag: sync at mixtime, else at playtime
+	public static final int BASS_SYNC_ONETIME = 0x80000000;	// flag: sync only once, else continuously
 
 	public interface SYNCPROC
 	{
@@ -413,6 +430,10 @@ public class BASS
 	public static final int BASS_ATTRIB_CPU = 7;
 	public static final int BASS_ATTRIB_SRC = 8;
 	public static final int BASS_ATTRIB_NET_RESUME = 9;
+	public static final int BASS_ATTRIB_SCANINFO = 10;
+	public static final int BASS_ATTRIB_NORAMP = 11;
+	public static final int BASS_ATTRIB_BITRATE = 12;
+	public static final int BASS_ATTRIB_BUFFER = 13;
 	public static final int BASS_ATTRIB_MUSIC_AMPLIFY = 0x100;
 	public static final int BASS_ATTRIB_MUSIC_PANSEP = 0x101;
 	public static final int BASS_ATTRIB_MUSIC_PSCALER = 0x102;
@@ -422,8 +443,12 @@ public class BASS
 	public static final int BASS_ATTRIB_MUSIC_VOL_CHAN = 0x200; // + channel #
 	public static final int BASS_ATTRIB_MUSIC_VOL_INST = 0x300; // + instrument #
 
+	// BASS_ChannelSlideAttribute flags
+	public static final int BASS_SLIDE_LOG = 0x1000000;
+
 	// BASS_ChannelGetData flags
 	public static final int BASS_DATA_AVAILABLE = 0;			// query how much data is buffered
+	public static final int BASS_DATA_FIXED = 0x20000000;	// flag: return 8.24 fixed-point data
 	public static final int BASS_DATA_FLOAT = 0x40000000;	// flag: return floating-point sample data
 	public static final int BASS_DATA_FFT256 = 0x80000000;	// 256 sample FFT
 	public static final int BASS_DATA_FFT512 = 0x80000001;	// 512 FFT
@@ -432,6 +457,7 @@ public class BASS
 	public static final int BASS_DATA_FFT4096 = 0x80000004;	// 4096 FFT
 	public static final int BASS_DATA_FFT8192 = 0x80000005;	// 8192 FFT
 	public static final int BASS_DATA_FFT16384 = 0x80000006;	// 16384 FFT
+	public static final int BASS_DATA_FFT32768 = 0x80000007;	// 32768 FFT
 	public static final int BASS_DATA_FFT_INDIVIDUAL = 0x10;	// FFT flag: FFT for each channel, else all combined
 	public static final int BASS_DATA_FFT_NOWINDOW = 0x20;	// FFT flag: no Hanning window
 	public static final int BASS_DATA_FFT_REMOVEDC = 0x40;	// FFT flag: pre-remove DC bias
@@ -441,6 +467,7 @@ public class BASS
 	public static final int BASS_LEVEL_MONO = 1;
 	public static final int BASS_LEVEL_STEREO = 2;
 	public static final int BASS_LEVEL_RMS = 4;
+	public static final int BASS_LEVEL_VOLPAN = 8;
 
 	// BASS_ChannelGetTags types : what's returned
 	public static final int BASS_TAG_ID3 = 0;	// ID3v1 tags : TAG_ID3
@@ -454,16 +481,22 @@ public class BASS
 	public static final int BASS_TAG_VENDOR = 9;	// OGG encoder : String
 	public static final int BASS_TAG_LYRICS3 = 10;	// Lyric3v2 tag : String
 	public static final int BASS_TAG_WAVEFORMAT = 14;	// WAVE format : ByteBuffer containing WAVEFORMATEEX structure
+	public static final int BASS_TAG_AM_MIME = 15;	// Android Media MIME type : String
+	public static final int BASS_TAG_AM_NAME = 16;	// Android Media codec name : String
 	public static final int BASS_TAG_RIFF_INFO = 0x100; // RIFF "INFO" tags : String array
 	public static final int BASS_TAG_RIFF_BEXT = 0x101; // RIFF/BWF "bext" tags : TAG_BEXT
 	public static final int BASS_TAG_RIFF_CART = 0x102; // RIFF/BWF "cart" tags : TAG_CART
 	public static final int BASS_TAG_RIFF_DISP = 0x103; // RIFF "DISP" text tag : String
+	public static final int BASS_TAG_RIFF_CUE = 0x104; // RIFF "cue " chunk : TAG_CUE structure
+	public static final int BASS_TAG_RIFF_SMPL = 0x105; // RIFF "smpl" chunk : TAG_SMPL structure
 	public static final int BASS_TAG_APE_BINARY = 0x1000;	// + index #, binary APE tag : TAG_APE_BINARY
 	public static final int BASS_TAG_MUSIC_NAME = 0x10000;	// MOD music name : String
 	public static final int BASS_TAG_MUSIC_MESSAGE = 0x10001;	// MOD message : String
 	public static final int BASS_TAG_MUSIC_ORDERS = 0x10002;	// MOD order list : ByteBuffer
+	public static final int BASS_TAG_MUSIC_AUTH = 0x10003;	// MOD author : UTF-8 string
 	public static final int BASS_TAG_MUSIC_INST = 0x10100;	// + instrument #, MOD instrument name : String
 	public static final int BASS_TAG_MUSIC_SAMPLE = 0x10300;	// + sample #, MOD sample name : String
+	public static final int BASS_TAG_BYTEBUFFER = 0x10000000;	// flag: return a ByteBuffer instead of a String or TAG_ID3
 
 	// ID3v1 tag structure
 	public static class TAG_ID3 {
@@ -487,8 +520,16 @@ public class BASS
 	// BASS_ChannelGetLength/GetPosition/SetPosition modes
 	public static final int BASS_POS_BYTE = 0;		// byte position
 	public static final int BASS_POS_MUSIC_ORDER = 1;		// order.row position, MAKELONG(order,row)
+	public static final int BASS_POS_OGG = 3;		// OGG bitstream number
+	public static final int BASS_POS_RESET = 0x2000000; // flag: reset user file buffers
+	public static final int BASS_POS_RELATIVE = 0x4000000; // flag: seek relative to the current position
+	public static final int BASS_POS_INEXACT = 0x8000000; // flag: allow seeking to inexact position
 	public static final int BASS_POS_DECODE = 0x10000000; // flag: get the decoding (not playing) position
 	public static final int BASS_POS_DECODETO = 0x20000000; // flag: decode to the position instead of seeking
+	public static final int BASS_POS_SCAN = 0x40000000; // flag: scan to the position
+
+	// BASS_ChannelSetDevice/GetDevice option
+	public static final int BASS_NODEVICE = 0x20000;
 
 	// DX8 effect types, use with BASS_ChannelSetFX
 	public static final int BASS_FX_DX8_CHORUS = 0;
@@ -500,6 +541,7 @@ public class BASS
 	public static final int BASS_FX_DX8_I3DL2REVERB = 6;
 	public static final int BASS_FX_DX8_PARAMEQ = 7;
 	public static final int BASS_FX_DX8_REVERB = 8;
+	public static final int BASS_FX_VOLUME = 9;
 
 	public static class BASS_DX8_CHORUS {
 		public float fWetDryMix;
@@ -555,6 +597,13 @@ public class BASS
 	public static final int BASS_DX8_PHASE_ZERO = 2;
 	public static final int BASS_DX8_PHASE_90 = 3;
 	public static final int BASS_DX8_PHASE_180 = 4;
+
+	public static class BASS_FX_VOLUME_PARAM {
+		public float fTarget;
+		public float fCurrent;
+		public float fTime;
+		public int lCurve;
+	}
 
 	public static class Asset {
 		public Asset() {}
@@ -651,6 +700,8 @@ public class BASS
 	public static native boolean BASS_ChannelGetAttribute(int handle, int attrib, Float value);
 	public static native boolean BASS_ChannelSlideAttribute(int handle, int attrib, float value, int time);
 	public static native boolean BASS_ChannelIsSliding(int handle, int attrib);
+	public static native boolean BASS_ChannelSetAttributeEx(int handle, int attrib, ByteBuffer value, int size);
+	public static native int BASS_ChannelGetAttributeEx(int handle, int attrib, ByteBuffer value, int size);
 	public static native boolean BASS_ChannelSet3DAttributes(int handle, int mode, float min, float max, int iangle, int oangle, float outvol);
 	public static native boolean BASS_ChannelGet3DAttributes(int handle, Integer mode, Float min, Float max, Integer iangle, Integer oangle, Float outvol);
 	public static native boolean BASS_ChannelSet3DPosition(int handle, BASS_3DVECTOR pos, BASS_3DVECTOR orient, BASS_3DVECTOR vel);
@@ -673,6 +724,7 @@ public class BASS
 	public static native boolean BASS_FXSetParameters(int handle, Object params);
 	public static native boolean BASS_FXGetParameters(int handle, Object params);
 	public static native boolean BASS_FXReset(int handle);
+	public static native boolean BASS_FXSetPriority(int handle, int priority);
 
 	public static class Utils {
 		public static int LOBYTE(int n) { return n&0xff; }
